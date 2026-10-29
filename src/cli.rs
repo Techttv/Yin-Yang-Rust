@@ -36,7 +36,11 @@ pub enum Command {
 #[derive(Debug, Subcommand)]
 pub enum ConfigAction {
     /// Print the configuration as JSON
-    Show,
+    Show {
+        /// Print the settings a fresh install starts with instead of the saved ones
+        #[arg(long)]
+        defaults: bool,
+    },
     /// Replace the configuration with the JSON on stdin
     Save,
 }

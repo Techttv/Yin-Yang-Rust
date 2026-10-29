@@ -63,8 +63,8 @@ fn lock(paths: &Paths) -> Result<File> {
     Ok(file)
 }
 
-fn load_config(ctx: &Ctx) -> Result<Config> {
-    let mut config = Config::load(ctx.paths)?;
+/// Adds the plugins' own default themes to every entry that lacks them.
+fn with_plugin_defaults(ctx: &Ctx, mut config: Config) -> Config {
     let defaults: Vec<_> = ctx
         .plugins
         .iter()
@@ -74,7 +74,11 @@ fn load_config(ctx: &Ctx) -> Result<Config> {
         })
         .collect();
     config.fill_defaults(&defaults);
-    Ok(config)
+    config
+}
+
+fn load_config(ctx: &Ctx) -> Result<Config> {
+    Ok(with_plugin_defaults(ctx, Config::load(ctx.paths)?))
 }
 
 fn times_for(ctx: &Ctx, config: &Config, source: &dyn LocationSource) -> Result<(NaiveTime, NaiveTime)> {
@@ -274,8 +278,9 @@ pub fn plugins_json(ctx: &Ctx, out: &mut dyn Write) -> Result<i32> {
     Ok(0)
 }
 
-pub fn config_show(ctx: &Ctx, out: &mut dyn Write) -> Result<i32> {
-    let config = load_config(ctx)?;
+/// Prints the configuration; with `defaults`, the one a fresh install starts with instead.
+pub fn config_show(ctx: &Ctx, defaults: bool, out: &mut dyn Write) -> Result<i32> {
+    let config = if defaults { with_plugin_defaults(ctx, Config::default()) } else { load_config(ctx)? };
     writeln!(out, "{}", serde_json::to_string_pretty(&config)?)?;
     Ok(0)
 }

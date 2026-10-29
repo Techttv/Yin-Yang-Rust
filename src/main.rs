@@ -44,7 +44,7 @@ fn run(cli: Cli) -> anyhow::Result<i32> {
         Command::Toggle => app::toggle(&ctx, &mut out, &mut err),
         Command::Status => app::status(&ctx, &mut out),
         Command::Plugins { .. } => app::plugins_json(&ctx, &mut out),
-        Command::Config { action: ConfigAction::Show } => app::config_show(&ctx, &mut out),
+        Command::Config { action: ConfigAction::Show { defaults } } => app::config_show(&ctx, defaults, &mut out),
         Command::Config { action: ConfigAction::Save } => app::config_save(&ctx, &mut stdin().lock(), &mut err),
         Command::Timer { action: TimerAction::Refresh } => app::timer_refresh(&ctx, &mut err),
     }

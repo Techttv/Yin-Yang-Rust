@@ -34,6 +34,6 @@ fn listing_plugins_and_showing_the_config_work_without_a_session_bus() {
     assert_eq!(serde_json::from_slice::<serde_json::Value>(&out).unwrap().as_array().unwrap().len(), 12);
 
     let mut out = Vec::new();
-    assert_eq!(app::config_show(&ctx, &mut out).unwrap(), 0);
+    assert_eq!(app::config_show(&ctx, false, &mut out).unwrap(), 0);
     assert!(!out.is_empty());
 }

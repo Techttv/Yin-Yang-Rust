@@ -464,10 +464,29 @@ fn plugins_lists_every_plugin_in_gui_order() {
 }
 
 #[test]
+fn config_show_defaults_prints_the_fresh_config_and_ignores_the_file() {
+    let f = Fixture::new();
+    f.update_config(|c| {
+        c.mode = Mode::FollowSun;
+        c.boot_offset = 99;
+    });
+    let mut out = Vec::new();
+    f.with_ctx(noon(), &NoNetworkLocation, |ctx| app::config_show(ctx, true, &mut out).unwrap());
+    let shown: Config = serde_json::from_slice(&out).unwrap();
+    assert_eq!(shown.mode, Mode::Manual);
+    assert_eq!(shown.boot_offset, 10);
+    assert!(!shown.plugins["system"].enabled, "plugins start disabled");
+    assert_eq!(shown.plugins["kvantum"].light_theme.as_deref(), Some("KvFlatLight"));
+    assert_eq!(shown.plugins["kvantum"].dark_theme.as_deref(), Some("KvFlat"));
+    assert_eq!(shown.plugins["custom"].light_theme, None);
+    assert!(!shown.plugins.contains_key("firefox"));
+}
+
+#[test]
 fn config_show_prints_the_config_completed_with_every_plugin() {
     let f = Fixture::new();
     let mut out = Vec::new();
-    f.with_ctx(noon(), &NoNetworkLocation, |ctx| app::config_show(ctx, &mut out).unwrap());
+    f.with_ctx(noon(), &NoNetworkLocation, |ctx| app::config_show(ctx, false, &mut out).unwrap());
     let shown: Config = serde_json::from_slice(&out).unwrap();
     for plugin in registry() {
         assert!(shown.plugins.contains_key(plugin.key()), "{} missing", plugin.key());
@@ -479,7 +498,7 @@ fn config_show_prints_the_config_completed_with_every_plugin() {
     fs::remove_file(&empty.paths.config_file).unwrap();
     fs::remove_file(empty.home.path().join(".config/yin_yang_dev.json")).unwrap();
     let mut out = Vec::new();
-    empty.with_ctx(noon(), &NoNetworkLocation, |ctx| app::config_show(ctx, &mut out).unwrap());
+    empty.with_ctx(noon(), &NoNetworkLocation, |ctx| app::config_show(ctx, false, &mut out).unwrap());
     let fresh: Config = serde_json::from_slice(&out).unwrap();
     assert_eq!(fresh.plugins.len(), 12);
     assert!(fresh.plugins.values().all(|p| !p.enabled));
