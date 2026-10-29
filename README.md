@@ -159,6 +159,10 @@ package in `packaging/arch/`.
 
 ## Credits and license
 
-yinyang is a rewrite of [Yin-Yang](https://github.com/oskarsh/Yin-Yang) by Oskar Schachtschneider and
-contributors. It follows that program's behaviour and reuses its translations (German, Dutch, Chinese),
-icon and window layout. Released under the [MIT license](LICENSE).
+yinyang is a rewrite of [Yin-Yang](https://github.com/oskarsh/Yin-Yang) by Oskar Schachtschneider, later
+maintained by L0drex, and its contributors. It follows that program's behaviour and reuses its
+translations (German, Dutch, Chinese), icon and window layout. This project is independent: it is not
+affiliated with or endorsed by the original authors.
+
+Released under the [MIT license](LICENSE): copyright (c) 2019 Oskar Schachtschneider and
+(c) 2026 Techttv.
