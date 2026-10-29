@@ -1,0 +1,6 @@
+[Unit]
+Description=Automatic light and dark mode
+After=suspend.target
+
+[Service]
+ExecStart=/usr/bin/yin_yang --systemd

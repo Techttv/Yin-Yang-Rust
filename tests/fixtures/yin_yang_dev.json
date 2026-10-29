@@ -1,0 +1,84 @@
+{
+    "version": 4.0,
+    "running": false,
+    "dark_mode": true,
+    "mode": "sunset to sunrise",
+    "coordinates": [
+        0.0,
+        0.0
+    ],
+    "update_location": true,
+    "update_interval": 60,
+    "times": [
+        "07:00",
+        "20:00"
+    ],
+    "boot_offset": 10,
+    "plugins": {
+        "system": {
+            "enabled": true,
+            "light_theme": "com.github.vinceliuice.MacTahoe-Light",
+            "dark_theme": "com.github.vinceliuice.MacTahoe-Dark"
+        },
+        "colors": {
+            "enabled": true,
+            "light_theme": "MacTahoeLight",
+            "dark_theme": "MacTahoeDark"
+        },
+        "gtk": {
+            "enabled": true,
+            "light_theme": "MacTahoe-Light",
+            "dark_theme": "MacTahoe-Dark"
+        },
+        "icons": {
+            "enabled": false,
+            "light_theme": "breeze",
+            "dark_theme": "breeze-dark"
+        },
+        "kvantum": {
+            "enabled": true,
+            "light_theme": "MacTahoe",
+            "dark_theme": "MacTahoeDark"
+        },
+        "wallpaper": {
+            "enabled": false,
+            "light_theme": null,
+            "dark_theme": null
+        },
+        "firefox": {
+            "enabled": true,
+            "light_theme": "firefox-compact-light@mozilla.org",
+            "dark_theme": "firefox-compact-dark@mozilla.org"
+        },
+        "vs code": {
+            "enabled": true,
+            "light_theme": "Solarized Light",
+            "dark_theme": "Solarized Dark"
+        },
+        "onlyoffice": {
+            "enabled": false,
+            "light_theme": "theme-light",
+            "dark_theme": "theme-dark"
+        },
+        "okular": {
+            "enabled": false,
+            "light_theme": "",
+            "dark_theme": "InvertLightness"
+        },
+        "konsole": {
+            "enabled": false,
+            "light_theme": "BlackOnWhite",
+            "dark_theme": "Breeze"
+        },
+        "custom": {
+            "enabled": false,
+            "light_theme": "",
+            "dark_theme": ""
+        },
+        "notification": {
+            "enabled": true,
+            "light_theme": "Day",
+            "dark_theme": "Night"
+        }
+    }
+}
