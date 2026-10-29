@@ -1,5 +1,6 @@
 pub mod bus;
 pub mod config;
+pub mod edit;
 pub mod exec;
 pub mod location;
 pub mod paths;
