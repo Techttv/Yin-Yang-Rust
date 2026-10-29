@@ -69,6 +69,10 @@ impl Exec for FakeExec {
             .unwrap_or(ExecOutput { status: 0, stdout: String::new() }))
     }
 
+    fn run_inherited(&self, program: &str, args: &[&str]) -> Result<i32> {
+        Ok(self.run(program, args)?.status)
+    }
+
     fn exists(&self, program: &str) -> bool {
         !self.missing.lock().unwrap().contains(program)
     }

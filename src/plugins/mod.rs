@@ -1,6 +1,7 @@
 //! The plugins, one module each; `plugin::registry` lists them in GUI order.
 
 pub mod colors;
+pub mod custom;
 pub mod gtk;
 pub mod icons;
 pub mod konsole;

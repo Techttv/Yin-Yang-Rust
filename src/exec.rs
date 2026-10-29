@@ -17,6 +17,11 @@ pub trait Exec: Send + Sync {
     /// Waits for the program to finish. A non-zero exit status is not an error; failing to start is.
     fn run(&self, program: &str, args: &[&str]) -> Result<ExecOutput>;
 
+    /// Waits for the program, leaving its output attached to ours (the journal, under systemd), and
+    /// returns its exit code. Unlike `run`, a background process the program leaves behind cannot
+    /// block the caller by holding a captured pipe open.
+    fn run_inherited(&self, program: &str, args: &[&str]) -> Result<i32>;
+
     /// Whether `program` can be started: an executable file, found in `PATH` unless it has a `/`.
     fn exists(&self, program: &str) -> bool;
 }
@@ -33,6 +38,14 @@ impl Exec for RealExec {
             status: output.status.code().unwrap_or(-1),
             stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
         })
+    }
+
+    fn run_inherited(&self, program: &str, args: &[&str]) -> Result<i32> {
+        let status = Command::new(program)
+            .args(args)
+            .status()
+            .with_context(|| format!("starting {program}"))?;
+        Ok(status.code().unwrap_or(-1))
     }
 
     fn exists(&self, program: &str) -> bool {

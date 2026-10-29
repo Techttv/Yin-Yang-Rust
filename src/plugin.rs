@@ -8,7 +8,7 @@ use crate::bus::Bus;
 use crate::config::PluginConfig;
 use crate::exec::Exec;
 use crate::plugins::{
-    colors::Colors, gtk::Gtk, icons::Icons, konsole::Konsole, kvantum::Kvantum,
+    colors::Colors, custom::Custom, gtk::Gtk, icons::Icons, konsole::Konsole, kvantum::Kvantum,
     notification::Notification,
     okular::Okular, onlyoffice::OnlyOffice, system::System, vscode::Vscode, wallpaper::Wallpaper,
 };
@@ -93,6 +93,7 @@ pub fn registry() -> Vec<Box<dyn Plugin>> {
         Box::new(OnlyOffice),
         Box::new(Okular),
         Box::new(Konsole::new()),
+        Box::new(Custom),
         Box::new(Notification),
     ]
 }
