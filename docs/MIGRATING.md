@@ -1,61 +1,53 @@
-# Passare a `yinyang` dal vecchio Yin-Yang
+# Switching from the original Yin-Yang to `yinyang`
 
-`yinyang` vive accanto al vecchio programma con nomi diversi (`yinyang`, `yinyang-gui`,
-`yinyang.timer`, `~/.config/yinyang.json`). Il pacchetto non attiva nulla: il passaggio lo fai tu.
+`yinyang` lives next to the old program under different names (`yinyang`, `yinyang-gui`,
+`yinyang.timer`, `~/.config/yinyang.json`). The package starts nothing by itself: you decide when to
+switch.
 
-## 1. Installare
+## 1. Install
 
 ```sh
 cd packaging/arch && makepkg -si
 ```
 
-Se avevi installato una copia per utente in `~/.local` (con una versione precedente dello script
-di installazione), togliila, perché in `PATH` verrebbe prima di `/usr/bin`:
+or install the `.pkg.tar.zst` from the latest release with `sudo pacman -U`.
 
-```sh
-rm -f ~/.local/bin/yinyang ~/.local/bin/yinyang-gui \
-      ~/.local/share/applications/yinyang-gui.desktop \
-      ~/.local/share/icons/hicolor/scalable/apps/yinyang.svg
-hash -r
-```
-
-## 2. Provare senza cambiare nulla
+## 2. Try it without changing anything
 
 ```sh
 yinyang plugins --json | jq 'map({key,available})'
-yinyang apply --dark --force --dry-run     # stampa cosa farebbe, non esegue niente
+yinyang apply --dark --force --dry-run     # prints what it would do, runs nothing
 yinyang status
 ```
 
-`apply --auto --dry-run` dice "no location" finché una vera esecuzione non ha salvato una posizione:
-un test a secco non usa la rete e non scrive nulla.
+`apply --auto --dry-run` says "no location" until a real run has saved a position: a dry run does not
+use the network and writes nothing.
 
-## 3. Passare
+## 3. Switch over
 
 ```sh
-systemctl --user disable --now yin_yang.timer   # il vecchio timer
-yinyang timer refresh                            # il nuovo: scrive e avvia yinyang.timer
+systemctl --user disable --now yin_yang.timer   # the old timer
+yinyang timer refresh                            # the new one: writes and starts yinyang.timer
 systemctl --user list-timers yinyang.timer
 ```
 
-Se avevi già un `yinyang.timer` creato da una copia in `~/.local`, `yinyang timer refresh` riscrive
-il servizio con il percorso `/usr/bin/yinyang`.
+The old settings (`~/.config/yin_yang*.json`) are imported the first time, and never modified.
 
-## Tornare indietro
+## Rolling back
 
 ```sh
 systemctl --user disable --now yinyang.timer
 systemctl --user enable --now yin_yang.timer
 ```
 
-## Avvertenze
+## Things to know
 
-- **Aprire la vecchia GUI riattiva `yin_yang.timer`**: il vecchio programma rigenera e avvia il
-  proprio timer a ogni apertura o salvataggio. Disattivalo di nuovo con il primo comando del
-  passo 3. Resta anche la voce di menu del vecchio programma, che può partire da un avvio automatico.
-- Il primo `yinyang apply` reale o il tasto Apply della GUI abilitano `yinyang.timer`: fallo dopo
-  aver disattivato quello vecchio, altrimenti due timer cambiano il tema.
-- Firefox e Zen non hanno più un'integrazione: il loro tema predefinito segue il tema di sistema
-  tramite il portale `org.freedesktop.appearance`.
-- Disinstallare il pacchetto vecchio (`sudo pacman -Rns yin-yang`) è una tua scelta, quando sei
-  sicuro; non è necessario per usare `yinyang`.
+- **Opening the old GUI re-enables `yin_yang.timer`.** The old program regenerates and starts its own
+  timer whenever it is opened or saved. If that happens, disable it again with the first command of
+  step 3. The old launcher entry also remains, and may be started from a session autostart.
+- The first real `yinyang apply` (or the GUI's Apply button) enables `yinyang.timer`: do it after
+  disabling the old one, or two timers will switch the theme.
+- Firefox and Zen have no integration any more: their default theme follows the system theme through
+  the `org.freedesktop.appearance` portal.
+- Uninstalling the old package (`sudo pacman -Rns yin-yang`) is up to you, whenever you are sure; it is
+  not needed to use `yinyang`.

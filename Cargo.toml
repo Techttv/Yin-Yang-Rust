@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 description = "Switches the KDE Plasma desktop between light and dark themes by time or by sun"
 license = "MIT"
+repository = "https://github.com/Techttv/Yin-Yang-Rust"
 
 [dependencies]
 anyhow = "1.0.104"

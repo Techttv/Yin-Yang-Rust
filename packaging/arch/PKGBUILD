@@ -1,18 +1,24 @@
+# Maintainer: Techttv
+#
 # Builds the package from the checkout this file is in, not from a download:
 #
 #   cd packaging/arch && makepkg -si
 #
 # pacman then owns the files (`pacman -Qi yinyang`, `pacman -R yinyang`). After a `git pull`, the
 # same command installs the update. Nothing here is meant for the AUR.
+#
+# To release: bump the version in Cargo.toml, gui/CMakeLists.txt and below, and tag it (prepare()
+# refuses to build if Cargo.toml and this file disagree).
 
 pkgname=yinyang
-pkgver=0.1.0.r17.g524c3d0
+pkgver=0.1.0
 pkgrel=1
 pkgdesc='Switches the KDE Plasma desktop between light and dark themes by time or by sun'
 arch=('x86_64')
+url='https://github.com/Techttv/Yin-Yang-Rust'
 license=('MIT')
 depends=('glibc' 'gcc-libs' 'hicolor-icon-theme' 'qt6-base' 'systemd')
-makedepends=('rust' 'cmake' 'qt6-tools' 'git')
+makedepends=('rust' 'cmake' 'qt6-tools')
 checkdepends=('dbus')
 optdepends=(
     'plasma-integration: the window follows the Plasma theme'
@@ -27,15 +33,14 @@ options=('!lto' '!debug')
 
 _root() { cd "$startdir/../.." && pwd; }
 
-pkgver() {
-    cd "$(_root)"
-    local base
-    base=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)
-    printf '%s.r%s.g%s' "$base" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
-}
-
 prepare() {
     cd "$(_root)"
+    local cargo_version
+    cargo_version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)
+    if [[ $cargo_version != "$pkgver" ]]; then
+        error "pkgver ($pkgver) does not match Cargo.toml ($cargo_version)"
+        return 1
+    fi
     export RUSTUP_TOOLCHAIN=stable
     cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
 }

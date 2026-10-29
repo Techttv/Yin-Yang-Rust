@@ -1,29 +1,56 @@
-# Yin-Yang nativo (KDE) — specifica
+# Native Yin-Yang for KDE — design
 
-Riscrittura di [oskarsh/Yin-Yang](https://github.com/oskarsh/Yin-Yang) 4.0.1 (MIT, Python/PySide6) senza dipendenza da Python.
-Riferimento funzionale: i sorgenti in `/opt/yin_yang/yin_yang` (copiati nel repo in `reference/`).
+A rewrite of [oskarsh/Yin-Yang](https://github.com/oskarsh/Yin-Yang) 4.0.1 (MIT, Python/PySide6) with no
+Python dependency. Functional reference: the original sources.
 
-## Perché
-Il pacchetto Arch lancia `python3` dal `PATH` (qui: miniconda) e dipende da librerie Python di sistema (`suntime`, `dateutil`, `PySide6`, `systemd-python`). Basta un aggiornamento o un `PATH` diverso e il timer systemd fallisce. L'obiettivo è un programma che non cambia comportamento con gli aggiornamenti di Arch.
+## Why
+The Arch package of the original runs `python3` from the `PATH` (here: miniconda) and depends on system
+Python libraries (`suntime`, `dateutil`, `PySide6`, `systemd-python`). One update or a different `PATH`
+and the systemd timer fails. The goal is a program whose behaviour does not change with Arch updates.
 
-## Decisioni
-- **Nucleo in Rust** (`yinyang`): CLI, calcolo alba/tramonto, timer systemd, tutti i plugin. Nessun toolkit grafico, nessun Python. Dipende solo da glibc.
-- **GUI in C++/Qt6 Widgets** (`yinyang-gui`): solo API pubbliche di Qt (compatibili a livello binario in tutta la serie 6.x). Prende da sola tema, colori, icone e font di KDE tramite `plasma-integration`. Nessun KDE Frameworks.
-- **La GUI non scrive mai la configurazione**: parla con il nucleo via CLI (`yinyang config show`, `config save`, `plugins --json`, `apply`, `toggle`). Lo schema è definito in un solo posto.
-- **Solo KDE Plasma 6**. Su altri desktop i plugin dipendenti dal desktop risultano "non disponibili", senza errori.
-- **12 plugin**: system, colors, gtk, icons, kvantum, wallpaper, vs code, onlyoffice, okular, konsole, custom, notification.
-- **Nessuna integrazione Firefox/Zen**: il loro tema predefinito segue il tema di sistema (portale `org.freedesktop.appearance`), quindi cambia insieme a Plasma. Niente estensione, host di native messaging né manifest. Si potrà aggiungere in seguito se servirà un tema specifico per il browser.
-- **Convivenza con il vecchio programma**: nomi nuovi (`yinyang`, `yinyang.timer`, `~/.config/yinyang.json`). La configurazione vecchia viene importata, mai modificata.
-- **Installazione per utente** in `~/.local` (nessun `sudo`, nessun pacchetto pacman nel ciclo di vita).
+## Decisions
+- **Core in Rust** (`yinyang`): CLI, sunrise/sunset computation, systemd timer, every plugin. No
+  graphical toolkit, no Python. Depends only on glibc and libgcc.
+- **GUI in C++/Qt 6 Widgets** (`yinyang-gui`): public Qt API only (binary compatible across the 6.x
+  series). It takes theme, colours, icons and fonts from KDE through `plasma-integration`, with no KDE
+  Frameworks and no `setStyle()`.
+- **The GUI never writes the configuration.** It talks to the core through the CLI (`yinyang config show`,
+  `config save`, `plugins --json`, `apply`, `status`). The schema is defined in one place.
+- **KDE Plasma 6 only.** On other desktops the desktop-dependent plugins report "not available",
+  without errors.
+- **12 plugins:** system, colors, gtk, icons, kvantum, wallpaper, vs code, onlyoffice, okular, konsole,
+  custom, notification.
+- **No Firefox/Zen integration.** Their default theme follows the system theme (the
+  `org.freedesktop.appearance` portal), so it changes together with Plasma. No extension, native
+  messaging host or manifest. It can be added later if a browser-specific theme is ever needed.
+- **Coexistence with the old program.** New names (`yinyang`, `yinyang.timer`, `~/.config/yinyang.json`).
+  The old configuration is imported, never modified.
+- **Installation as an Arch package** built from the repository with `makepkg` (`packaging/arch`), so
+  that `pacman` owns the files. No AUR, AppImage or Flatpak.
 
-## Correzioni rispetto all'originale
-- #84: `settings.json` di VS Code (JSONC con commenti) non viene più sovrascritto: si cambia solo il valore del tema.
-- #360 / posizione: senza rete non si va in crash e non si usa mai (0,0); si usa l'ultima posizione nota.
-- #199: wallpaper con `#` nel nome del file.
-- #344: `--systemd` non esiste più; il service lancia `yinyang apply --auto`.
-- Il timer ha `Persistent=true`: se il PC era spento all'ora del cambio, il cambio avviene all'accensione (un timer `OnCalendar` scaduto durante la sospensione scatta comunque al risveglio). Il service parte dopo `graphical-session.target` e `dark_mode` non si salva se un plugin fallisce, così il run successivo ritenta.
-- In modalità "sunset to sunrise" il timer si riallinea a ogni esecuzione, anche quando il tema non cambia (l'alba si sposta ogni giorno).
-- `--dry-run` non esegue davvero nulla.
+## Fixes compared with the original
+- #84: VS Code's `settings.json` (JSONC with comments) is no longer overwritten: only the theme value
+  changes.
+- #360 / location: without a network the program neither crashes nor ever uses (0, 0); it uses the last
+  known location.
+- #199: wallpaper with a `#` in the file name.
+- #344: `--systemd` is gone; the service runs `yinyang apply --auto`.
+- The timer has `Persistent=true`: if the computer was off at the switch time, the switch happens when it
+  comes back (a `OnCalendar` timer that expired during suspend fires on wake-up anyway). The service
+  starts after `graphical-session.target`, and `dark_mode` is not saved if a plugin fails, so the next run
+  tries again.
+- In "sunset to sunrise" mode the timer is realigned on every run, even when the theme does not change
+  (sunrise moves every day).
+- `--dry-run` really runs nothing.
 
-## Fuori ambito (per ora)
-GNOME, XFCE, MATE, Cinnamon, Budgie; eseguire yinyang stesso in un Flatpak (restano però i percorsi di configurazione e delle estensioni delle app Flatpak di VS Code e OnlyOffice); migrazione di configurazioni precedenti alla 4.0 (si usano i default); GeoClue2 (si usa la posizione IP); pacchetto PKGBUILD.
+## Added after review
+- Every external program gets 60 s and every D-Bus call 25 s; a hung service cannot hold the lock for
+  ever.
+- `apply` exits with status 75 when only the Plasma session was missing; the service restarts on that
+  code alone (20 s later, at most five times in ten minutes), without a notification.
+- The Konsole fallback profile names no `Command`, so Konsole starts the user's own shell.
+
+## Out of scope (for now)
+GNOME, XFCE, MATE, Cinnamon, Budgie; running yinyang itself inside a Flatpak (the configuration and
+extension paths of Flatpak VS Code and OnlyOffice are still handled); migrating configurations older
+than 4.0 (defaults are used); GeoClue2 (IP geolocation is used); packages for other distributions.
