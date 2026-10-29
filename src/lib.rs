@@ -1,4 +1,6 @@
+pub mod app;
 pub mod bus;
+pub mod cli;
 pub mod config;
 pub mod edit;
 pub mod exec;
