@@ -59,5 +59,6 @@ private:
     QList<PluginRow> m_rows;
     bool m_loading = false;
     bool m_dirty = false;
+    bool m_busy = false;
     bool m_sunTimesKnown = false;
 };

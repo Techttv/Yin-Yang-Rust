@@ -16,6 +16,7 @@
 #include <QStatusBar>
 #include <QVBoxLayout>
 
+#include "appsetup.h"
 #include "coreclient.h"
 #include "ui_main_window.h"
 
@@ -74,7 +75,7 @@ MainWindow::MainWindow(CoreClient *client, QWidget *parent)
     , ui(std::make_unique<Ui::main_window>())
 {
     ui->setupUi(this);
-    setWindowIcon(QIcon::fromTheme(QStringLiteral("yinyang-gui")));
+    setWindowIcon(appIcon());
     ui->inp_latitude->setDecimals(4);
     ui->inp_longitude->setDecimals(4);
     ui->label_active->setWordWrap(true);
@@ -327,6 +328,7 @@ bool MainWindow::saveAndApply()
 
 void MainWindow::setBusy(bool busy)
 {
+    m_busy = busy;
     ui->btn_box->button(QDialogButtonBox::Apply)->setEnabled(!busy);
     ui->button_light->setEnabled(!busy);
     ui->button_dark->setEnabled(!busy);
@@ -336,6 +338,9 @@ void MainWindow::setBusy(bool busy)
 
 void MainWindow::applied(bool ok, const QString &error)
 {
+    // Not ours: the tray reports its own switches.
+    if (!m_busy)
+        return;
     setBusy(false);
     if (!ok) {
         reportError(tr("The theme could not be applied: %1").arg(error));
@@ -412,6 +417,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
             event->ignore();
             return;
         }
+        // The window may be shown again from the tray: it must not still hold what was discarded.
+        if (answer == QMessageBox::Discard)
+            load();
     }
     event->accept();
 }

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Yin & Yang
+GenericName=Theme switcher
+Comment=Switch between light and dark themes automatically
+Exec=yinyang-gui
+Icon=yinyang
+Terminal=false
+Categories=Settings;Qt;
