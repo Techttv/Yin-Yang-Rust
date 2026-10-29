@@ -4,5 +4,6 @@ pub mod exec;
 pub mod location;
 pub mod paths;
 pub mod plugin;
+pub mod plugins;
 pub mod runner;
 pub mod schedule;

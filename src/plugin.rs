@@ -7,6 +7,7 @@ use serde::Serialize;
 use crate::bus::Bus;
 use crate::config::PluginConfig;
 use crate::exec::Exec;
+use crate::plugins::{colors::Colors, icons::Icons, kvantum::Kvantum, system::System};
 
 /// Everything a plugin may touch, so tests can swap it.
 pub struct Env {
@@ -77,5 +78,10 @@ pub fn theme_for(cfg: &PluginConfig, variant: Variant) -> Result<&str> {
 
 /// Every plugin, in the order the GUI shows them.
 pub fn registry() -> Vec<Box<dyn Plugin>> {
-    Vec::new()
+    vec![
+        Box::new(System::new()),
+        Box::new(Colors),
+        Box::new(Icons::new()),
+        Box::new(Kvantum::new()),
+    ]
 }
