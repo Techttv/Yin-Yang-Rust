@@ -8,3 +8,4 @@ pub mod plugin;
 pub mod plugins;
 pub mod runner;
 pub mod schedule;
+pub mod systemd;

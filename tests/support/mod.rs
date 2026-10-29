@@ -25,7 +25,15 @@ impl FakeExec {
     pub fn respond(&self, program: &str, status: i32, stdout: &str) {
         self.outputs.lock().unwrap().insert(
             program.into(),
-            ExecOutput { status, stdout: stdout.into() },
+            ExecOutput { status, stdout: stdout.into(), stderr: String::new() },
+        );
+    }
+
+    /// Like `respond`, with something on stderr too.
+    pub fn respond_with_stderr(&self, program: &str, status: i32, stdout: &str, stderr: &str) {
+        self.outputs.lock().unwrap().insert(
+            program.into(),
+            ExecOutput { status, stdout: stdout.into(), stderr: stderr.into() },
         );
     }
 
@@ -66,7 +74,7 @@ impl Exec for FakeExec {
             .unwrap()
             .get(program)
             .cloned()
-            .unwrap_or(ExecOutput { status: 0, stdout: String::new() }))
+            .unwrap_or(ExecOutput { status: 0, stdout: String::new(), stderr: String::new() }))
     }
 
     fn run_inherited(&self, program: &str, args: &[&str]) -> Result<i32> {

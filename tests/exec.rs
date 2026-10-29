@@ -34,3 +34,23 @@ fn run_inherited_does_not_wait_for_background_children() {
     assert_eq!(RealExec.run_inherited("sh", &["-c", "sleep 2 &"]).unwrap(), 0);
     assert!(started.elapsed() < std::time::Duration::from_millis(1500), "waited {:?}", started.elapsed());
 }
+
+#[test]
+fn run_captures_stderr_and_check_reports_it() {
+    let out = RealExec.run("sh", &["-c", "echo oops >&2; exit 2"]).unwrap();
+    assert_eq!(out.stderr, "oops\n");
+    let err = out.check("my-tool").unwrap_err().to_string();
+    assert!(err.contains("my-tool") && err.contains("status 2") && err.contains("oops"), "{err}");
+}
+
+#[test]
+fn check_passes_a_successful_output_through() {
+    let out = RealExec.run("sh", &["-c", "printf fine"]).unwrap().check("sh").unwrap();
+    assert_eq!(out.stdout, "fine");
+}
+
+#[test]
+fn check_without_stderr_still_names_the_status() {
+    let err = RealExec.run("sh", &["-c", "exit 7"]).unwrap().check("sh").unwrap_err().to_string();
+    assert_eq!(err, "sh exited with status 7");
+}

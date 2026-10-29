@@ -17,7 +17,7 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
 
 use crate::edit::write_preserving;
 use crate::exec::ExecOutput;
@@ -25,11 +25,7 @@ use crate::plugin::Env;
 
 /// Runs a program and fails on a non-zero exit status.
 pub(crate) fn run_checked(env: &Env, program: &str, args: &[&str]) -> Result<ExecOutput> {
-    let output = env.exec.run(program, args)?;
-    if output.status != 0 {
-        bail!("{program} exited with status {}", output.status);
-    }
-    Ok(output)
+    env.exec.run(program, args)?.check(program)
 }
 
 /// Locale names to look for in translated metadata, most specific first: `["it_IT", "it"]`.

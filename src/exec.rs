@@ -3,13 +3,29 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::Command;
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExecOutput {
     /// Exit code, or -1 when the process was killed by a signal.
     pub status: i32,
     pub stdout: String,
+    pub stderr: String,
+}
+
+impl ExecOutput {
+    /// Turns a non-zero exit status into an error naming `what` and, when there is one, the
+    /// program's own explanation from stderr.
+    pub fn check(self, what: &str) -> Result<ExecOutput> {
+        if self.status == 0 {
+            return Ok(self);
+        }
+        let reason: String = self.stderr.trim().chars().take(500).collect();
+        if reason.is_empty() {
+            bail!("{what} exited with status {}", self.status);
+        }
+        bail!("{what} exited with status {}: {reason}", self.status)
+    }
 }
 
 /// Runs external programs; a trait so plugin tests can record the calls instead.
@@ -37,6 +53,7 @@ impl Exec for RealExec {
         Ok(ExecOutput {
             status: output.status.code().unwrap_or(-1),
             stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
         })
     }
 
