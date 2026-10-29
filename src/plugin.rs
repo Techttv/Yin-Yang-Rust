@@ -9,7 +9,7 @@ use crate::config::PluginConfig;
 use crate::exec::Exec;
 use crate::plugins::{
     colors::Colors, gtk::Gtk, icons::Icons, kvantum::Kvantum, notification::Notification,
-    system::System, wallpaper::Wallpaper,
+    okular::Okular, onlyoffice::OnlyOffice, system::System, vscode::Vscode, wallpaper::Wallpaper,
 };
 
 /// Everything a plugin may touch, so tests can swap it.
@@ -88,6 +88,9 @@ pub fn registry() -> Vec<Box<dyn Plugin>> {
         Box::new(Icons::new()),
         Box::new(Kvantum::new()),
         Box::new(Wallpaper),
+        Box::new(Vscode::new()),
+        Box::new(OnlyOffice),
+        Box::new(Okular),
         Box::new(Notification),
     ]
 }
