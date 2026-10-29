@@ -40,6 +40,11 @@ add_executable(yinyang-gui main.cpp)
 target_compile_definitions(yinyang-gui PRIVATE PROJECT_VERSION="${PROJECT_VERSION}")
 target_link_libraries(yinyang-gui PRIVATE yinyang_gui)
 
+include(GNUInstallDirs)
+install(TARGETS yinyang-gui RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES yinyang-gui.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+install(FILES icon.svg DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps RENAME yinyang.svg)
+
 enable_testing()
 foreach(name coreclient mainwindow tray)
     add_executable(tst_${name} tests/tst_${name}.cpp)

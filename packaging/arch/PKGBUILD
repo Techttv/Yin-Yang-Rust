@@ -1,0 +1,63 @@
+# Builds the package from the checkout this file is in, not from a download:
+#
+#   cd packaging/arch && makepkg -si
+#
+# pacman then owns the files (`pacman -Qi yinyang`, `pacman -R yinyang`). After a `git pull`, the
+# same command installs the update. Nothing here is meant for the AUR.
+
+pkgname=yinyang
+pkgver=0.1.0.r17.g524c3d0
+pkgrel=1
+pkgdesc='Switches the KDE Plasma desktop between light and dark themes by time or by sun'
+arch=('x86_64')
+license=('MIT')
+depends=('glibc' 'gcc-libs' 'hicolor-icon-theme' 'qt6-base' 'systemd')
+makedepends=('rust' 'cmake' 'qt6-tools' 'git')
+checkdepends=('dbus')
+optdepends=(
+    'plasma-integration: the window follows the Plasma theme'
+    'plasma-workspace: Plasma theme, colours and icons plugins'
+    'kde-gtk-config: GTK plugin'
+    'kvantum: Kvantum plugin'
+    'konsole: Konsole plugin'
+    'okular: Okular plugin'
+    'qt6-translations: translated standard buttons'
+)
+options=('!lto' '!debug')
+
+_root() { cd "$startdir/../.." && pwd; }
+
+pkgver() {
+    cd "$(_root)"
+    local base
+    base=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)
+    printf '%s.r%s.g%s' "$base" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+    cd "$(_root)"
+    export RUSTUP_TOOLCHAIN=stable
+    cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+    cd "$(_root)"
+    export RUSTUP_TOOLCHAIN=stable CARGO_TARGET_DIR="$srcdir/target"
+    cargo build --release --frozen
+    cmake -S gui -B "$srcdir/build-gui" -DCMAKE_BUILD_TYPE=None -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build "$srcdir/build-gui"
+}
+
+check() {
+    cd "$(_root)"
+    export RUSTUP_TOOLCHAIN=stable CARGO_TARGET_DIR="$srcdir/target"
+    cargo test --frozen
+    QT_QPA_PLATFORM=offscreen ctest --test-dir "$srcdir/build-gui" --output-on-failure
+}
+
+package() {
+    cd "$(_root)"
+    install -Dm755 "$srcdir/target/release/yinyang" "$pkgdir/usr/bin/yinyang"
+    DESTDIR="$pkgdir" cmake --install "$srcdir/build-gui"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
