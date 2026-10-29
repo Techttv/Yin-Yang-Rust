@@ -29,9 +29,9 @@ const BUILT_IN_SCHEMES: [(&str, &str); 13] = [
     ("WhiteOnBlack", "White on Black"),
 ];
 
-/// Profile used as the base when the user has none at all.
-const FALLBACK_PROFILE: &str =
-    "[Appearance]\nColorScheme=Breeze\n\n[General]\nCommand=/bin/bash\nName=YinYang\nParent=FALLBACK/\n";
+/// Profile used as the base when the user has none at all. It names no `Command`: Konsole then
+/// starts the user's own login shell, as its built-in profile does.
+const FALLBACK_PROFILE: &str = "[Appearance]\nColorScheme=Breeze\n\n[General]\nName=YinYang\nParent=FALLBACK/\n";
 
 /// Konsole's colour scheme. A scheme can only be switched live through a profile, so this keeps a
 /// `Light` and a `Dark` profile, sets their colour schemes, makes the right one the default for

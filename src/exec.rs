@@ -1,7 +1,10 @@
 use std::env;
+use std::io::Read;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Child, Command, Stdio};
+use std::thread;
+use std::time::{Duration, Instant};
 
 use anyhow::{bail, Context, Result};
 
@@ -42,27 +45,78 @@ pub trait Exec: Send + Sync {
     fn exists(&self, program: &str) -> bool;
 }
 
-pub struct RealExec;
+/// How long a program may take before it is killed: a hung desktop service or a command waiting
+/// for input must not hold the lock (and with it every later theme switch) forever.
+const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
+
+pub struct RealExec {
+    timeout: Duration,
+}
+
+impl RealExec {
+    pub fn new() -> RealExec {
+        RealExec::with_timeout(DEFAULT_TIMEOUT)
+    }
+
+    pub fn with_timeout(timeout: Duration) -> RealExec {
+        RealExec { timeout }
+    }
+
+    /// Waits for `child`; on timeout kills it and says so.
+    fn wait(&self, child: &mut Child, program: &str) -> Result<std::process::ExitStatus> {
+        let deadline = Instant::now() + self.timeout;
+        loop {
+            if let Some(status) = child.try_wait().with_context(|| format!("waiting for {program}"))? {
+                return Ok(status);
+            }
+            if Instant::now() >= deadline {
+                let _ = child.kill();
+                let _ = child.wait();
+                bail!("{program} did not finish in {} s and was killed", self.timeout.as_secs());
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+    }
+}
+
+impl Default for RealExec {
+    fn default() -> Self {
+        RealExec::new()
+    }
+}
+
+fn drain<R: Read + Send + 'static>(mut pipe: R) -> thread::JoinHandle<Vec<u8>> {
+    thread::spawn(move || {
+        let mut bytes = Vec::new();
+        let _ = pipe.read_to_end(&mut bytes);
+        bytes
+    })
+}
 
 impl Exec for RealExec {
     fn run(&self, program: &str, args: &[&str]) -> Result<ExecOutput> {
-        let output = Command::new(program)
+        let mut child = Command::new(program)
             .args(args)
-            .output()
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
             .with_context(|| format!("starting {program}"))?;
-        Ok(ExecOutput {
-            status: output.status.code().unwrap_or(-1),
-            stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-        })
+        // Read on other threads so a full pipe cannot stall the program. After a timeout they are
+        // left to end by themselves: a grandchild may still hold the pipes open.
+        let stdout = drain(child.stdout.take().expect("piped"));
+        let stderr = drain(child.stderr.take().expect("piped"));
+        let status = self.wait(&mut child, program)?;
+        let text = |reader: thread::JoinHandle<Vec<u8>>| String::from_utf8_lossy(&reader.join().unwrap_or_default()).into_owned();
+        Ok(ExecOutput { status: status.code().unwrap_or(-1), stdout: text(stdout), stderr: text(stderr) })
     }
 
     fn run_inherited(&self, program: &str, args: &[&str]) -> Result<i32> {
-        let status = Command::new(program)
+        let mut child = Command::new(program)
             .args(args)
-            .status()
+            .spawn()
             .with_context(|| format!("starting {program}"))?;
-        Ok(status.code().unwrap_or(-1))
+        Ok(self.wait(&mut child, program)?.code().unwrap_or(-1))
     }
 
     fn exists(&self, program: &str) -> bool {

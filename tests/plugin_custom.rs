@@ -23,7 +23,7 @@ fn fake_env() -> (Env, Arc<FakeExec>) {
 }
 
 fn real_env() -> Env {
-    Env { home: "/nonexistent".into(), kde: true, exec: Arc::new(RealExec), bus: Arc::new(FakeBus::new()) }
+    Env { home: "/nonexistent".into(), kde: true, exec: Arc::new(RealExec::new()), bus: Arc::new(FakeBus::new()) }
 }
 
 fn cfg(light: &str, dark: &str) -> PluginConfig {

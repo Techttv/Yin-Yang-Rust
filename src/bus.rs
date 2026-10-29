@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::time::Duration;
 
 use anyhow::{Context, Result};
 use zbus::blocking::Connection;
@@ -26,11 +27,19 @@ pub trait Bus: Send + Sync {
 /// The session bus, connected on first use: without a session every call fails, nothing else does.
 pub struct RealBus {
     connection: Mutex<Option<Connection>>,
+    timeout: Duration,
 }
+
+/// zbus waits for a reply forever by default; the Qt D-Bus API the original used gave up after 25 s.
+const METHOD_TIMEOUT: Duration = Duration::from_secs(25);
 
 impl RealBus {
     pub fn session() -> RealBus {
-        RealBus { connection: Mutex::new(None) }
+        RealBus::with_timeout(METHOD_TIMEOUT)
+    }
+
+    pub fn with_timeout(timeout: Duration) -> RealBus {
+        RealBus { connection: Mutex::new(None), timeout }
     }
 
     fn connection(&self) -> Result<Connection> {
@@ -38,7 +47,9 @@ impl RealBus {
         if let Some(connection) = &*slot {
             return Ok(connection.clone());
         }
-        let connection = Connection::session().context("connecting to the session bus")?;
+        let connection = zbus::blocking::connection::Builder::session()
+            .and_then(|builder| builder.method_timeout(self.timeout).build())
+            .context("connecting to the session bus")?;
         *slot = Some(connection.clone());
         Ok(connection)
     }

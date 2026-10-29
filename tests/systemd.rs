@@ -63,7 +63,7 @@ fn the_timer_drops_fractions_of_a_second() {
 fn the_service_runs_apply_auto_once_the_session_is_up() {
     assert_eq!(
         render_service(Path::new(EXE)),
-        "[Unit]\nDescription=Automatic light and dark mode (Yin-Yang)\nAfter=graphical-session.target\n\n[Service]\nType=oneshot\nExecStart=/home/u/.local/bin/yinyang apply --auto\n"
+        "[Unit]\nDescription=Automatic light and dark mode (Yin-Yang)\nAfter=graphical-session.target\nStartLimitIntervalSec=10min\nStartLimitBurst=5\n\n[Service]\nType=oneshot\nExecStart=/home/u/.local/bin/yinyang apply --auto\nTimeoutStartSec=2min\nRestartForceExitStatus=75\nRestartSec=20\n"
     );
 }
 

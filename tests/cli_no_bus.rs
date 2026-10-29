@@ -18,7 +18,7 @@ fn listing_plugins_and_showing_the_config_work_without_a_session_bus() {
 
     let home = TempDir::new().unwrap();
     let paths = Paths::under(home.path());
-    let env = Env { home: home.path().into(), kde: true, exec: Arc::new(RealExec), bus: Arc::new(RealBus::session()) };
+    let env = Env { home: home.path().into(), kde: true, exec: Arc::new(RealExec::new()), bus: Arc::new(RealBus::session()) };
     let plugins = registry();
     let ctx = Ctx {
         env: &env,

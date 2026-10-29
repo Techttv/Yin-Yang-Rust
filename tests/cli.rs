@@ -347,9 +347,14 @@ fn outside_a_kde_session_the_skipped_plugins_make_the_run_retry_later() {
     let mut f = Fixture::new();
     f.kde = false;
     let run = f.apply(&["--dark"], noon(), &FakeLoc(None));
-    assert_eq!(run.code, 1);
+    assert_eq!(run.code, 75, "the service restarts on this code and on no other");
     assert!(run.err.contains("KDE"), "{}", run.err);
     assert!(!f.config().dark_mode, "an early run before the session is up must not mark the theme as applied");
+
+    let auto = f.apply(&["--auto"], at(2026, 6, 21, 21), &FakeLoc(None));
+    assert_eq!(auto.code, 75, "{}", auto.err);
+    let notices: Vec<_> = f.bus.calls().into_iter().filter(|c| c.starts_with("notify Yin-Yang | ")).collect();
+    assert!(notices.is_empty(), "the service retries by itself, so nobody needs telling: {notices:?}");
 
     let g = Fixture::new();
     g.exec.missing("kvantummanager");

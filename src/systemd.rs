@@ -29,7 +29,7 @@ fn exec_start_word(exe: &Path) -> String {
 
 pub fn render_service(exe: &Path) -> String {
     format!(
-        "[Unit]\nDescription={DESCRIPTION}\nAfter=graphical-session.target\n\n[Service]\nType=oneshot\nExecStart={} apply --auto\n",
+        "[Unit]\nDescription={DESCRIPTION}\nAfter=graphical-session.target\nStartLimitIntervalSec=10min\nStartLimitBurst=5\n\n[Service]\nType=oneshot\nExecStart={} apply --auto\nTimeoutStartSec=2min\nRestartForceExitStatus=75\nRestartSec=20\n",
         exec_start_word(exe)
     )
 }

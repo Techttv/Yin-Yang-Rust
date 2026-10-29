@@ -64,9 +64,10 @@ fn should_be_dark_when_light_period_crosses_midnight() {
 }
 
 #[test]
-fn should_be_dark_with_equal_times_is_deterministic() {
-    let first = should_be_dark(t(12, 0), t(7, 0), t(7, 0));
-    assert_eq!(first, should_be_dark(t(12, 0), t(7, 0), t(7, 0)));
+fn should_be_dark_with_equal_times_is_always_light() {
+    for now in [t(0, 0), t(6, 59), t(7, 0), t(7, 1), t(12, 0), t(23, 59)] {
+        assert!(!should_be_dark(now, t(7, 0), t(7, 0)), "{now}");
+    }
 }
 
 #[test]

@@ -37,7 +37,7 @@ pub fn system_env(paths: &Paths) -> Env {
     Env {
         home: paths.home.clone(),
         kde: running_under_kde(),
-        exec: Arc::new(RealExec),
+        exec: Arc::new(RealExec::new()),
         bus: Arc::new(RealBus::session()),
     }
 }
@@ -106,6 +106,10 @@ fn notify_failure(ctx: &Ctx, text: &str) {
     let _ = ctx.env.bus.notify("Yin-Yang", text);
 }
 
+/// `apply` exits with this (EX_TEMPFAIL) when only the session was missing: the service restarts on
+/// exactly this code, so a run that starts before Plasma is up tries again a little later.
+pub const EXIT_RETRY: i32 = 75;
+
 struct Report {
     /// A plugin returned an error.
     failed: bool,
@@ -140,7 +144,6 @@ fn run_plugins(ctx: &Ctx, config: &Config, variant: Variant, quiet: bool, err: &
         let _ = writeln!(err, "not running in a KDE session; the theme will be applied on the next run");
     }
     let summary = match failures.as_slice() {
-        [] if retry => "Not running in a KDE session yet; will try again".to_string(),
         [] => String::new(),
         [only] => only.clone(),
         [first, rest @ ..] => format!("{first} (+{} more)", rest.len()),
@@ -197,7 +200,15 @@ pub fn apply(ctx: &Ctx, args: &ApplyArgs, out: &mut dyn Write, err: &mut dyn Wri
     if auto && !report.summary.is_empty() {
         notify_failure(ctx, &report.summary);
     }
-    Ok(if report.failed || report.retry || !timer_ok { 1 } else { 0 })
+    Ok(if report.failed {
+        1
+    } else if report.retry {
+        EXIT_RETRY
+    } else if !timer_ok {
+        1
+    } else {
+        0
+    })
 }
 
 fn dry_run(ctx: &Ctx, args: &ApplyArgs, out: &mut dyn Write, err: &mut dyn Write) -> Result<i32> {

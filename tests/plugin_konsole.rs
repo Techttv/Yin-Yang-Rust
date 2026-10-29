@@ -141,11 +141,11 @@ fn konsole_creates_a_default_profile_when_there_is_none() {
 
     assert_eq!(
         s.read_profile("Default.profile"),
-        "[Appearance]\nColorScheme=Breeze\n\n[General]\nCommand=/bin/bash\nName=YinYang\nParent=FALLBACK/\n"
+        "[Appearance]\nColorScheme=Breeze\n\n[General]\nName=YinYang\nParent=FALLBACK/\n"
     );
     assert_eq!(
         s.read_profile("Light.profile"),
-        "[Appearance]\nColorScheme=BlackOnWhite\n\n[General]\nCommand=/bin/bash\nName=Light\nParent=FALLBACK/\n"
+        "[Appearance]\nColorScheme=BlackOnWhite\n\n[General]\nName=Light\nParent=FALLBACK/\n"
     );
     assert!(fs::read_to_string(s.konsolerc()).unwrap().contains("DefaultProfile=Light.profile"));
 }
