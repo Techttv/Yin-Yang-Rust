@@ -3,6 +3,7 @@
 pub mod colors;
 pub mod gtk;
 pub mod icons;
+pub mod konsole;
 pub mod kvantum;
 pub mod notification;
 pub mod okular;
