@@ -40,10 +40,10 @@ fn collect_themes(dir: &Path, base: bool, themes: &mut BTreeSet<String>) {
         let Ok(kind) = entry.file_type() else { continue };
         if kind.is_dir() {
             collect_themes(&path, false, themes);
-        } else if let Some(name) = entry.file_name().to_string_lossy().strip_suffix(".kvconfig") {
-            if !(base && name == "kvantum") {
-                themes.insert(name.to_string());
-            }
+        } else if let Some(name) = entry.file_name().to_string_lossy().strip_suffix(".kvconfig")
+            && !(base && name == "kvantum")
+        {
+            themes.insert(name.to_string());
         }
     }
 }
