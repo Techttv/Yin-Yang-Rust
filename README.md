@@ -2,7 +2,7 @@
 
 <img src="gui/icon.svg" width="112" alt="yinyang icon">
 
-# yinyang
+# Yin-Yang
 
 **Light and dark themes for KDE Plasma, switched for you.**<br>
 By the clock or by the sun, across the desktop, your apps and your editor — in one step.
