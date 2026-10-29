@@ -79,7 +79,7 @@ pub struct FakeBus {
     calls: Mutex<Vec<String>>,
     services: Mutex<Vec<String>>,
     introspections: Mutex<HashMap<(String, String), String>>,
-    failure: Mutex<Option<String>>,
+    failure: Mutex<Option<(String, String)>>,
 }
 
 impl FakeBus {
@@ -102,7 +102,12 @@ impl FakeBus {
 
     /// Every method fails with this message from now on.
     pub fn fail_all(&self, message: &str) {
-        *self.failure.lock().unwrap() = Some(message.into());
+        self.fail_matching("", message);
+    }
+
+    /// Calls whose recorded line starts with `prefix` (e.g. `"call_str"`) fail with this message.
+    pub fn fail_matching(&self, prefix: &str, message: &str) {
+        *self.failure.lock().unwrap() = Some((prefix.into(), message.into()));
     }
 
     /// Calls in order: `"call_str dest path iface method arg"`, `"call_bool …"`,
@@ -112,10 +117,11 @@ impl FakeBus {
     }
 
     fn record(&self, line: String) -> Result<()> {
-        self.calls.lock().unwrap().push(line);
-        match &*self.failure.lock().unwrap() {
-            Some(message) => Err(anyhow!(message.clone())),
-            None => Ok(()),
+        let failure = self.failure.lock().unwrap().clone();
+        self.calls.lock().unwrap().push(line.clone());
+        match failure {
+            Some((prefix, message)) if line.starts_with(&prefix) => Err(anyhow!(message)),
+            _ => Ok(()),
         }
     }
 }
