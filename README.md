@@ -15,8 +15,7 @@ By the clock or by the sun, across the desktop, your apps and your editor — in
 ![Qt 6](https://img.shields.io/badge/GUI-Qt_6-41cd52?style=flat-square&logo=qt&logoColor=white)
 
 <br>
-
-<img src="docs/images/settings.png" width="330" alt="Settings tab"> &nbsp;
+<img width="330" alt="Settings tab" src="https://github.com/user-attachments/assets/95dda01f-c62d-4f06-8356-485688eecc65" />&nbsp;
 <img src="docs/images/plugins.png" width="330" alt="Plugins tab">
 
 </div>
