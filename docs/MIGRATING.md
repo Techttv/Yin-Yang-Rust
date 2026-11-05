@@ -1,8 +1,8 @@
 # Switching from the original Yin-Yang to `yinyang`
 
 `yinyang` lives next to the old program under different names (`yinyang`, `yinyang-gui`,
-`yinyang.timer`, `~/.config/yinyang.json`). The package starts nothing by itself: you decide when to
-switch.
+`yinyang.timer`, `~/.config/yinyang.json`). Installing starts no timer: you decide when to
+switch. Only the tray icon starts with your session.
 
 ## 1. Install
 
@@ -10,7 +10,8 @@ switch.
 cd packaging/arch && makepkg -si
 ```
 
-or install the `.pkg.tar.zst` from the latest release with `sudo pacman -U`.
+or install the `.pkg.tar.zst` from the latest release with `sudo pacman -U`, or without pacman:
+`./install.sh` (installs in `~/.local`).
 
 ## 2. Try it without changing anything
 

@@ -65,11 +65,27 @@ makepkg -si
 `-s` installs the build dependencies (`rust`, `cmake`, `qt6-tools`). The build runs the whole test suite
 (about four minutes the first time). To update: `git pull`, then the same `makepkg -si`.
 
+### Without pacman
+
+```sh
+git clone https://github.com/Techttv/Yin-Yang-Rust.git
+cd Yin-Yang-Rust
+./install.sh
+```
+
+This builds `yinyang` and `yinyang-gui` and installs them in `~/.local`, with no `sudo`. Run it again
+to update. It refuses to run while the pacman package is installed, so there is never a second copy.
+`./install.sh --uninstall` removes what it installed.
+
+Both ways install the same files and start the tray icon with your Plasma session (the package puts the
+entry in `/etc/xdg/autostart`, the script in `~/.config/autostart`). The timer is created on the first
+real run, not by the installation.
+
 ### Remove
 
 ```sh
 systemctl --user disable --now yinyang.timer
-sudo pacman -R yinyang
+sudo pacman -R yinyang        # or: ./install.sh --uninstall
 ```
 
 ## Get started

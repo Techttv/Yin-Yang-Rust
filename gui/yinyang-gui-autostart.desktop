@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Yin & Yang
+Comment=Keeps the theme switcher in the system tray
+Exec=yinyang-gui --minimized
+Icon=yinyang
+Terminal=false
+NoDisplay=true
+OnlyShowIn=KDE;

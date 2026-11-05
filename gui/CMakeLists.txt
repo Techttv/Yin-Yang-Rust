@@ -45,6 +45,10 @@ install(TARGETS yinyang-gui RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES yinyang-gui.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 install(FILES icon.svg DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps RENAME yinyang.svg)
 
+# The tray icon starts with the Plasma session. For a package this is /etc/xdg/autostart.
+set(YINYANG_AUTOSTART_DIR "${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg/autostart" CACHE PATH "Where the session autostart entry goes")
+install(FILES yinyang-gui-autostart.desktop DESTINATION ${YINYANG_AUTOSTART_DIR} RENAME yinyang-gui.desktop)
+
 enable_testing()
 foreach(name coreclient mainwindow tray)
     add_executable(tst_${name} tests/tst_${name}.cpp)
