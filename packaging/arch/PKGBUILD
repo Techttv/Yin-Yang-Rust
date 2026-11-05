@@ -11,7 +11,7 @@
 # refuses to build if Cargo.toml and this file disagree).
 
 pkgname=yinyang
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
 pkgdesc='Switches the KDE Plasma desktop between light and dark themes by time or by sun'
 arch=('x86_64')
