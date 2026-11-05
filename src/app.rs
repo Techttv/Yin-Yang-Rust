@@ -187,11 +187,24 @@ pub fn apply(ctx: &Ctx, args: &ApplyArgs, out: &mut dyn Write, err: &mut dyn Wri
     };
 
     let wanted_dark = variant == Variant::Dark;
+    log::info!(
+        "apply {:?}: mode {:?}, times {:?}, now {}, due {}, saved {}, force {}, kde session {}",
+        args.choice(),
+        config.mode,
+        times.as_ref().ok(),
+        ctx.now.format("%H:%M:%S"),
+        variant_name(variant),
+        if config.dark_mode { "dark" } else { "light" },
+        args.force,
+        ctx.env.kde,
+    );
     if !args.force && wanted_dark == config.dark_mode {
+        log::info!("already {}: nothing to apply", variant_name(variant));
         return Ok(if timer_ok { 0 } else { 1 });
     }
 
     let report = run_plugins(ctx, &config, variant, args.force, err);
+    log::info!("plugins done: failed {}, retry {}", report.failed, report.retry);
     if !report.failed && !report.retry {
         let mut config = config;
         config.dark_mode = wanted_dark;

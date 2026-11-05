@@ -1,5 +1,6 @@
 #include "coreclient.h"
 
+#include <QDebug>
 #include <QJsonDocument>
 #include <QProcess>
 
@@ -36,9 +37,13 @@ CoreClient::~CoreClient()
 CoreClient::Result CoreClient::run(const QStringList &args, const QByteArray &input)
 {
     QProcess process;
+    qInfo().noquote() << "running" << m_program << args.join(' ');
     process.start(m_program, args);
-    if (!process.waitForStarted(TimeoutMs))
-        return {false, {}, describe(process, m_program)};
+    if (!process.waitForStarted(TimeoutMs)) {
+        const QString error = describe(process, m_program);
+        qWarning().noquote() << error;
+        return {false, {}, error};
+    }
     process.write(input);
     process.closeWriteChannel();
     if (!process.waitForFinished(TimeoutMs)) {
@@ -47,7 +52,10 @@ CoreClient::Result CoreClient::run(const QStringList &args, const QByteArray &in
         return {false, {}, QStringLiteral("%1 did not answer in %2 s").arg(m_program).arg(TimeoutMs / 1000)};
     }
     const bool ok = process.exitStatus() == QProcess::NormalExit && process.exitCode() == 0;
-    return {ok, process.readAllStandardOutput(), ok ? QString() : describe(process, m_program)};
+    const QString error = ok ? QString() : describe(process, m_program);
+    if (!ok)
+        qWarning().noquote() << m_program << args.join(' ') << "failed:" << error;
+    return {ok, process.readAllStandardOutput(), error};
 }
 
 QJsonDocument CoreClient::query(const QStringList &args)
@@ -113,16 +121,24 @@ void CoreClient::toggle()
 void CoreClient::runAsync(const QStringList &args)
 {
     auto *process = new QProcess(this);
+    qInfo().noquote() << "running" << m_program << args.join(' ');
     // errorOccurred(FailedToStart) comes without finished(); a crash comes with both.
     connect(process, &QProcess::errorOccurred, this, [this, process](QProcess::ProcessError error) {
         if (error == QProcess::FailedToStart) {
-            emit finished(false, describe(*process, m_program));
+            const QString text = describe(*process, m_program);
+            qWarning().noquote() << text;
+            emit finished(false, text);
             process->deleteLater();
         }
     });
-    connect(process, &QProcess::finished, this, [this, process](int code, QProcess::ExitStatus status) {
+    connect(process, &QProcess::finished, this, [this, process, args](int code, QProcess::ExitStatus status) {
         const bool ok = status == QProcess::NormalExit && code == 0;
-        emit finished(ok, ok ? QString() : describe(*process, m_program));
+        const QString error = ok ? QString() : describe(*process, m_program);
+        if (ok)
+            qInfo().noquote() << m_program << args.join(' ') << "finished";
+        else
+            qWarning().noquote() << m_program << args.join(' ') << "failed:" << error;
+        emit finished(ok, error);
         process->deleteLater();
     });
     process->start(m_program, args);

@@ -95,6 +95,7 @@ fn drain<R: Read + Send + 'static>(mut pipe: R) -> thread::JoinHandle<Vec<u8>> {
 
 impl Exec for RealExec {
     fn run(&self, program: &str, args: &[&str]) -> Result<ExecOutput> {
+        log::debug!("running {program} {args:?}");
         let mut child = Command::new(program)
             .args(args)
             .stdin(Stdio::null())
@@ -108,15 +109,20 @@ impl Exec for RealExec {
         let stderr = drain(child.stderr.take().expect("piped"));
         let status = self.wait(&mut child, program)?;
         let text = |reader: thread::JoinHandle<Vec<u8>>| String::from_utf8_lossy(&reader.join().unwrap_or_default()).into_owned();
-        Ok(ExecOutput { status: status.code().unwrap_or(-1), stdout: text(stdout), stderr: text(stderr) })
+        let output = ExecOutput { status: status.code().unwrap_or(-1), stdout: text(stdout), stderr: text(stderr) };
+        log::debug!("{program} exited with {}; stderr: {:?}", output.status, output.stderr.trim());
+        Ok(output)
     }
 
     fn run_inherited(&self, program: &str, args: &[&str]) -> Result<i32> {
+        log::debug!("running {program} {args:?}");
         let mut child = Command::new(program)
             .args(args)
             .spawn()
             .with_context(|| format!("starting {program}"))?;
-        Ok(self.wait(&mut child, program)?.code().unwrap_or(-1))
+        let code = self.wait(&mut child, program)?.code().unwrap_or(-1);
+        log::debug!("{program} exited with {code}");
+        Ok(code)
     }
 
     fn exists(&self, program: &str) -> bool {
