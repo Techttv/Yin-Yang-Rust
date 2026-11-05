@@ -38,7 +38,8 @@ fn run(cli: Cli) -> anyhow::Result<i32> {
         now: Local::now().fixed_offset(),
     };
 
-    let (mut out, mut err) = (stdout().lock(), stderr().lock());
+    // stderr stays unlocked: plugins log from their own threads, and a lock held here would block them for ever.
+    let (mut out, mut err) = (stdout().lock(), stderr());
     match cli.command {
         Command::Apply(args) => app::apply(&ctx, &args, &mut out, &mut err),
         Command::Toggle => app::toggle(&ctx, &mut out, &mut err),
