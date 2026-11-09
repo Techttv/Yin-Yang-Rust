@@ -93,11 +93,23 @@ fn drain<R: Read + Send + 'static>(mut pipe: R) -> thread::JoinHandle<Vec<u8>> {
     })
 }
 
+/// Builds the command. Qt tools (kvantummanager, the Plasma helpers) abort when started without a
+/// display, as from a service or early autostart; the offscreen platform lets them do their
+/// non-graphical work, so it is the fallback when no display is available.
+fn command(program: &str, args: &[&str]) -> Command {
+    let mut command = Command::new(program);
+    command.args(args);
+    let has_display = ["DISPLAY", "WAYLAND_DISPLAY"].iter().any(|name| env::var_os(name).is_some_and(|v| !v.is_empty()));
+    if !has_display && env::var_os("QT_QPA_PLATFORM").is_none() {
+        command.env("QT_QPA_PLATFORM", "offscreen");
+    }
+    command
+}
+
 impl Exec for RealExec {
     fn run(&self, program: &str, args: &[&str]) -> Result<ExecOutput> {
         log::debug!("running {program} {args:?}");
-        let mut child = Command::new(program)
-            .args(args)
+        let mut child = command(program, args)
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -116,8 +128,7 @@ impl Exec for RealExec {
 
     fn run_inherited(&self, program: &str, args: &[&str]) -> Result<i32> {
         log::debug!("running {program} {args:?}");
-        let mut child = Command::new(program)
-            .args(args)
+        let mut child = command(program, args)
             .spawn()
             .with_context(|| format!("starting {program}"))?;
         let code = self.wait(&mut child, program)?.code().unwrap_or(-1);
