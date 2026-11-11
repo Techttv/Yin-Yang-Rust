@@ -153,7 +153,8 @@ commands above, so the file format is defined in exactly one place.
 ## How it works
 
 `yinyang apply --auto` is run by `yinyang.service`, started by `yinyang.timer` at the two switch times,
-shortly after login (the *delay after boot*), and right away if a switch time passed while the computer
+that many seconds after the Plasma session starts (the *delay after boot*; the timer is wanted by
+`graphical-session.target`, so nothing runs before there is a display), and right away if a switch time passed while the computer
 was off. A run only saves the new state if every plugin succeeded, so a failed one is tried again next
 time. Each external program gets 60 seconds and each D-Bus call 25, so a hung desktop service cannot
 block the timer. If the Plasma session is not up yet, the run exits with status 75 and the service
