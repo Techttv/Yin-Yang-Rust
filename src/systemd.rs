@@ -34,12 +34,14 @@ pub fn render_service(exe: &Path) -> String {
     )
 }
 
-/// Fires at both switch times, shortly after the user manager starts, and, `Persistent`, right
-/// away if a switch time passed while the machine was off.
+/// Fires at both switch times and, `Persistent`, right away if a switch time passed while the
+/// machine was off. It is started by the graphical session, `boot_offset` seconds before its first
+/// run: a timer started with the user manager (`timers.target`, `OnStartupSec`) fires some seconds
+/// before Plasma has a display, when the Plasma, GTK and Kvantum tools cannot run yet.
 pub fn render_timer(light: NaiveTime, dark: NaiveTime, boot_offset: u32) -> String {
     let at = |time: NaiveTime| time.format("%H:%M:%S");
     format!(
-        "[Unit]\nDescription={DESCRIPTION}\n\n[Timer]\nOnCalendar={}\nOnCalendar={}\nOnStartupSec={boot_offset}\nPersistent=true\n\n[Install]\nWantedBy=timers.target\n",
+        "[Unit]\nDescription={DESCRIPTION}\nAfter=graphical-session.target\n\n[Timer]\nOnCalendar={}\nOnCalendar={}\nOnActiveSec={boot_offset}\nPersistent=true\n\n[Install]\nWantedBy=graphical-session.target\n",
         at(light),
         at(dark)
     )
@@ -64,8 +66,9 @@ fn write_if_changed(path: &Path, content: &str) -> Result<bool> {
 
 /// Brings the timer in line with the config. In manual mode it is stopped. Otherwise the units are
 /// rewritten if `times` (the local times the light and the dark theme start) or the config changed,
-/// systemd reloads them if so, and the timer is started; that last step always runs so a timer that
-/// was stopped or never enabled comes back. With `times` unknown, existing units are left alone.
+/// systemd reloads them if so (dropping the old links of the timer), and the timer is started; that
+/// last step always runs so a timer that was stopped or never enabled comes back. With `times`
+/// unknown, existing units are left alone.
 pub fn refresh(
     cfg: &Config,
     paths: &Paths,
@@ -97,6 +100,9 @@ pub fn refresh(
 
     if changed {
         systemctl(exec, &["daemon-reload"])?;
+        // `enable` only adds the link its unit asks for: the `timers.target` link of an older
+        // version would keep starting the timer too early, so every link goes first.
+        systemctl(exec, &["disable", TIMER_UNIT])?;
     }
     systemctl(exec, &["enable", "--now", TIMER_UNIT])
 }

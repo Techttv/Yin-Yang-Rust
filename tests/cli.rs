@@ -278,7 +278,11 @@ fn every_run_renews_the_timer_even_when_the_theme_does_not_change() {
     assert!(f.plugin_calls().is_empty(), "noon is light and the state is light");
     let timer = fs::read_to_string(f.timer_file()).unwrap();
     assert!(timer.contains("OnCalendar=03:34:49\n") && timer.contains("OnCalendar=18:48:38\n"), "{timer}");
-    assert_eq!(f.systemctl_calls(), ["systemctl --user daemon-reload", "systemctl --user enable --now yinyang.timer"]);
+    assert_eq!(f.systemctl_calls(), [
+            "systemctl --user daemon-reload",
+            "systemctl --user disable yinyang.timer",
+            "systemctl --user enable --now yinyang.timer"
+        ]);
 
     // Tomorrow the sun moves; the same command, with nothing to switch, moves the timer too.
     let g = Fixture::new();

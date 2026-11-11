@@ -18,6 +18,7 @@ fn t(h: u32, m: u32, s: u32) -> NaiveTime {
 
 const EXE: &str = "/home/u/.local/bin/yinyang";
 const RELOAD: &str = "systemctl --user daemon-reload";
+const UNLINK: &str = "systemctl --user disable yinyang.timer";
 const ENABLE: &str = "systemctl --user enable --now yinyang.timer";
 const DISABLE: &str = "systemctl --user disable --now yinyang.timer";
 
@@ -46,10 +47,10 @@ fn run_refresh(cfg: &Config, paths: &Paths, exec: &Arc<FakeExec>, times: Option<
 // ---- rendering ----------------------------------------------------------------------------
 
 #[test]
-fn the_timer_fires_at_both_times_at_start_up_and_catches_up() {
+fn the_timer_starts_with_the_graphical_session_fires_at_both_times_and_catches_up() {
     assert_eq!(
         render_timer(t(7, 30, 36), t(18, 11, 24), 10),
-        "[Unit]\nDescription=Automatic light and dark mode (Yin-Yang)\n\n[Timer]\nOnCalendar=07:30:36\nOnCalendar=18:11:24\nOnStartupSec=10\nPersistent=true\n\n[Install]\nWantedBy=timers.target\n"
+        "[Unit]\nDescription=Automatic light and dark mode (Yin-Yang)\nAfter=graphical-session.target\n\n[Timer]\nOnCalendar=07:30:36\nOnCalendar=18:11:24\nOnActiveSec=10\nPersistent=true\n\n[Install]\nWantedBy=graphical-session.target\n"
     );
 }
 
@@ -83,7 +84,7 @@ fn the_first_refresh_writes_both_units_reloads_and_starts_the_timer() {
 
     assert_eq!(fs::read_to_string(timer_file(&paths)).unwrap(), render_timer(t(7, 30, 36), t(18, 11, 24), 10));
     assert_eq!(fs::read_to_string(service_file(&paths)).unwrap(), render_service(Path::new(EXE)));
-    assert_eq!(exec.calls(), [RELOAD, ENABLE]);
+    assert_eq!(exec.calls(), [RELOAD, UNLINK, ENABLE]);
 }
 
 #[test]
@@ -110,7 +111,7 @@ fn tomorrows_sunrise_rewrites_the_timer_and_reloads() {
     run_refresh(&config(Mode::FollowSun), &paths, &second, Some((t(7, 31, 40), t(18, 10, 5)))).unwrap();
 
     assert_eq!(fs::read_to_string(timer_file(&paths)).unwrap(), render_timer(t(7, 31, 40), t(18, 10, 5), 10));
-    assert_eq!(second.calls(), [RELOAD, ENABLE]);
+    assert_eq!(second.calls(), [RELOAD, UNLINK, ENABLE]);
 }
 
 #[test]
@@ -122,13 +123,13 @@ fn a_new_boot_offset_or_executable_is_picked_up() {
     let second = Arc::new(FakeExec::new());
     let cfg = Config { boot_offset: 30, ..config(Mode::Scheduled) };
     run_refresh(&cfg, &paths, &second, times).unwrap();
-    assert!(fs::read_to_string(timer_file(&paths)).unwrap().contains("OnStartupSec=30\n"));
-    assert_eq!(second.calls(), [RELOAD, ENABLE]);
+    assert!(fs::read_to_string(timer_file(&paths)).unwrap().contains("OnActiveSec=30\n"));
+    assert_eq!(second.calls(), [RELOAD, UNLINK, ENABLE]);
 
     let third = Arc::new(FakeExec::new());
     refresh(&cfg, &paths, third.as_ref(), Path::new("/usr/local/bin/yinyang"), times).unwrap();
     assert!(fs::read_to_string(service_file(&paths)).unwrap().contains("ExecStart=/usr/local/bin/yinyang apply --auto"));
-    assert_eq!(third.calls(), [RELOAD, ENABLE]);
+    assert_eq!(third.calls(), [RELOAD, UNLINK, ENABLE]);
 }
 
 #[test]
@@ -186,4 +187,13 @@ fn a_missing_systemctl_is_an_error() {
     let (_home, paths, exec) = setup();
     exec.missing("systemctl");
     assert!(run_refresh(&config(Mode::Scheduled), &paths, &exec, Some((t(7, 0, 0), t(20, 0, 0)))).is_err());
+}
+
+#[test]
+fn the_timer_never_waits_on_the_user_manager_start_up_alone() {
+    // OnStartupSec counts from the start of the user manager, some seconds before Plasma has a
+    // display; the delay after boot must count from the moment the session starts the timer.
+    let timer = render_timer(t(7, 0, 0), t(20, 0, 0), 10);
+    assert!(!timer.contains("OnStartupSec"), "{timer}");
+    assert!(timer.contains("WantedBy=graphical-session.target\n") && !timer.contains("timers.target"), "{timer}");
 }
